@@ -16,6 +16,7 @@ public :
   };
 	void StartOpcodeProcessing() {
 		mp.ExecuteInstruction();		
+		mp.ExecuteInstruction();		
 	};
 
 	void Write(uint16_t addr, uint8_t data);

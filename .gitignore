@@ -1,0 +1,10 @@
+*.o
+*.swp
+*.swo
+
+# executable
+opcode_processor 
+
+# textual hex machine code file
+6502_hex_mc 
+

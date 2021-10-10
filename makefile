@@ -13,4 +13,4 @@ opcodeProcessor.o : opcodeProcessor.cpp
 	g++ -c opcodeProcessor.cpp
 
 clean : 
-	sudo rm opcode_processor *o
+	sudo rm -f opcode_processor *o

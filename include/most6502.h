@@ -33,7 +33,11 @@ public :
   // instruction exec
   enum InstrName {
 		LDA,
-    BREAK
+    BRK,
+		ADC,
+		SBC, 
+		AND,
+		ASL
   };
 
   struct Instruction {
@@ -42,6 +46,11 @@ public :
     InstrName instrName; 
     uint8_t cycles = 0;
   };
+	
+	struct DataDetails { // data and its mem_loc
+		uint8_t data;
+		uint16_t addr; 	
+	};
   
   MosT6502();
 
@@ -49,7 +58,7 @@ public :
 
   void PrintState();
   void Reset();  
-  uint8_t FetchData(Instruction instr);
+  DataDetails FetchData(Instruction instr);
   void ExecuteInstruction();    
 
 public : // private:
