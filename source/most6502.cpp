@@ -125,6 +125,11 @@ MosT6502::DataDetails MosT6502::FetchData(Instruction instr) {
 void MosT6502::ExecuteInstruction() {
   uint8_t opcode = bus->Read(pc);
   pc += 1; // as soon as a read from pc happens; pc++; from WD spec;
+
+	if(opcode == TERMINATE_OPCODE) {
+    std::cout << "\nProgram completed !\n";
+		exit(0);				
+	}
   
   if(m_instrSet.find(opcode) == m_instrSet.end()) {
     std::cout << "Illegal instr in the code. opcode=" << (opcode);
