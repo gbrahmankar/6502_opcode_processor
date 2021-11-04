@@ -12,6 +12,19 @@ class Bus;
 
 class MosT6502
 {
+
+enum FLAGS6502
+{
+	C = (1 << 0), 
+	Z = (1 << 1), 
+	I = (1 << 2), 
+	D = (1 << 3), 
+	B = (1 << 4), 
+	U = (1 << 5), 
+	V = (1 << 6), 
+	N = (1 << 7), 
+};
+
 public :
 
   // addr modes 
@@ -37,7 +50,15 @@ public :
 		ADC,
 		SBC, 
 		AND,
-		ASL
+		ASL,
+		BCC,
+		BCS,
+		BEQ,
+		BMI,
+		BNE,
+		BPL,
+		BVC,
+		BVS
   };
 
   struct Instruction {
@@ -61,6 +82,9 @@ public :
   DataDetails FetchData(Instruction instr);
   void ExecuteInstruction();    
 
+	// helpers
+	void ExecBranchInstr(Instruction instr, FLAGS6502 f, uint8_t expectedValue);
+
 public : // private:
   
   // registers 
@@ -70,18 +94,7 @@ public : // private:
 	uint8_t  sp     = 0x00;		
 	uint16_t pc     = 0x0000;	
   
-  // status register member + utils 
-  enum FLAGS6502
-  {
-    C = (1 << 0), 
-    Z = (1 << 1), 
-    I = (1 << 2), 
-    D = (1 << 3), 
-    B = (1 << 4), 
-    U = (1 << 5), 
-    V = (1 << 6), 
-    N = (1 << 7), 
-  };
+  // status register member + utils  
 	uint8_t  sr     = 0x00;		
   bool     GetFlag(FLAGS6502 f)         { return ((sr & f > 0) ? 1 : 0); } 
   void     SetFlag(FLAGS6502 f, bool v) { ((v) ? sr|=f : sr&=~f);        }
