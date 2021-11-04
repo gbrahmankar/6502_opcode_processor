@@ -58,7 +58,8 @@ public :
 		BNE,
 		BPL,
 		BVC,
-		BVS
+		BVS,
+		BIT
   };
 
   struct Instruction {

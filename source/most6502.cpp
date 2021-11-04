@@ -28,7 +28,11 @@ MosT6502::MosT6502() {
 		{ 0xd0, { "branch_on_result_not_zero", AddrMode::RELATIVE, InstrName::BNE, 2} },
 		{ 0x10, { "branch_on_result_plus", AddrMode::RELATIVE, InstrName::BPL, 2} },
 		{ 0x50, { "branch_on_overflow_clear", AddrMode::RELATIVE, InstrName::BVC, 2} },
-		{ 0x70, { "branch_on_overflow_set", AddrMode::RELATIVE, InstrName::BVS, 2} }
+		{ 0x70, { "branch_on_overflow_set", AddrMode::RELATIVE, InstrName::BVS, 2} },
+		
+		// lesser used 
+		{ 0x24, { "test_bit_in_mem_with_acc_zp",  AddrMode::ZERO_PAGE, InstrName::BIT, 3} },
+		{ 0x2c, { "test_bit_in_mem_with_acc_abs", AddrMode::ABSOLUTE,  InstrName::BIT, 4} }
 
   };
 }
@@ -219,6 +223,15 @@ void MosT6502::ExecuteInstruction() {
 		}
 		case InstrName::BEQ : {
 			ExecBranchInstr(instr, FLAGS6502::Z, 1);			
+			break;
+		}
+		case InstrName::BIT : {
+			auto dd = FetchData(instr);
+			
+			SetFlag(FLAGS6502::Z, (a & dd.data) == 0x00);
+			SetFlag(FLAGS6502::N, dd.data & (1 << 7));	
+			SetFlag(FLAGS6502::V, dd.data & (1 << 6));	
+	
 			break;
 		}
 		case InstrName::BMI : {
