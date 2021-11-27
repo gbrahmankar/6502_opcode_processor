@@ -2,40 +2,7 @@
 // concept : we need full obj declaration during usage eg : bus->Read(...)
 #include"../include/bus.h" // to prevent circular includes
 
-MosT6502::MosT6502() {
-  m_instrSet = {
-
-    { 0x00, { "break", AddrMode::IMMEDIATE, InstrName::BRK, 7 } },
-		
-		// load-store
-		{ 0xa9, { "load_a_imm", AddrMode::IMMEDIATE, InstrName::LDA, 2} },
-		
-		// add-sub
-		{ 0x69, { "add_with_carry_imm", AddrMode::IMMEDIATE, InstrName::ADC, 2} },
-		{ 0xe9, { "sub_with_burrow_in_imm", AddrMode::IMMEDIATE, InstrName::SBC, 2} },
-
-		// logical
-		{ 0x29, { "bitwise_and", AddrMode::IMMEDIATE, InstrName::AND, 2} },
-
-		// shifts
-		{ 0x0a, { "arithmetic_shift_left_1_bit", AddrMode::IMPLIED, InstrName::ASL, 2} },
-		
-		// branch relative
-		{ 0x90, { "branch_on_carry_clear", AddrMode::RELATIVE, InstrName::BCC, 2} },
-		{ 0xb0, { "branch_on_carry_set", AddrMode::RELATIVE, InstrName::BCS, 2} },
-		{ 0xf0, { "branch_on_result_zero", AddrMode::RELATIVE, InstrName::BEQ, 2} },
-		{ 0x30, { "branch_on_result_minus", AddrMode::RELATIVE, InstrName::BMI, 2} },
-		{ 0xd0, { "branch_on_result_not_zero", AddrMode::RELATIVE, InstrName::BNE, 2} },
-		{ 0x10, { "branch_on_result_plus", AddrMode::RELATIVE, InstrName::BPL, 2} },
-		{ 0x50, { "branch_on_overflow_clear", AddrMode::RELATIVE, InstrName::BVC, 2} },
-		{ 0x70, { "branch_on_overflow_set", AddrMode::RELATIVE, InstrName::BVS, 2} },
-		
-		// lesser used 
-		{ 0x24, { "test_bit_in_mem_with_acc_zp",  AddrMode::ZERO_PAGE, InstrName::BIT, 3} },
-		{ 0x2c, { "test_bit_in_mem_with_acc_abs", AddrMode::ABSOLUTE,  InstrName::BIT, 4} }
-
-  };
-}
+// helpers
 
 void MosT6502::PrintState() {
   std::cout << "\nMosT6502_State : " 
@@ -59,6 +26,25 @@ void MosT6502::Reset() {
 
   sr = 0x00;
   SetFlag(FLAGS6502::U, true); // this is set at reset
+}
+
+void MosT6502::ExecBranchInstr(const MosT6502::Instruction& instr, MosT6502::FLAGS6502 f, uint8_t expectedValue) {
+	uint16_t jumpDelta = (uint16_t)FetchData(instr).data;		
+	if(jumpDelta & 0x80) {
+		jumpDelta |= 0xff00;
+	}
+	if(GetFlag(f) == expectedValue) {
+		pc += jumpDelta;
+	}
+}
+
+void MosT6502::CompareRegister(const MosT6502::Instruction& instr, uint8_t targetReg) {
+		auto dd = FetchData(instr);	
+
+		uint16_t temp = (uint16_t)targetReg - (uint16_t)dd.data;
+		SetFlag(FLAGS6502::C, a >= dd.data);
+		SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+		SetFlag(FLAGS6502::N, temp & 0x0080);	
 }
 
 MosT6502::DataDetails MosT6502::FetchData(Instruction instr) {
@@ -254,6 +240,56 @@ void MosT6502::ExecuteInstruction() {
 			ExecBranchInstr(instr, FLAGS6502::V, 1);			
 			break;
 		}
+		case InstrName::CLC : {
+			SetFlag(FLAGS6502::C, false);
+			break;
+		}
+		case InstrName::CLD : {
+			SetFlag(FLAGS6502::D, false);
+			break;
+		}
+		case InstrName::CLI : {
+			SetFlag(FLAGS6502::I, false);
+			break;
+		}
+		case InstrName::CLV : {
+			SetFlag(FLAGS6502::V, false);
+			break;
+		}
+		case InstrName::CMP : {
+			CompareRegister(instr, a);	
+			break;
+		}
+		case InstrName::CPX : {
+			CompareRegister(instr, x);	
+			break;
+		}
+		case InstrName::CPY : {
+			CompareRegister(instr, y);	
+			break;
+		}
+		case InstrName::DEC : {
+			auto dd = FetchData(instr);
+
+			uint16_t temp = (uint16_t)dd.data - 1;
+			bus->Write(dd.addr, temp & 0x00ff);
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+		case InstrName::DEX : {
+			uint16_t temp = (uint16_t)x - 1;
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+		case InstrName::DEY : {
+			uint16_t temp = (uint16_t)y - 1;
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+
     default : {
       std::cout << "Instruction opcode=" << opcode << " not implemented yet";
       abort();
@@ -263,13 +299,4 @@ void MosT6502::ExecuteInstruction() {
 	PrintState();		
 }
 
-// helpers
-void MosT6502::ExecBranchInstr(MosT6502::Instruction instr, MosT6502::FLAGS6502 f, uint8_t expectedValue) {
-	uint16_t jumpDelta = (uint16_t)FetchData(instr).data;		
-	if(jumpDelta & 0x80) {
-		jumpDelta |= 0xff00;
-	}
-	if(GetFlag(f) == expectedValue) {
-		pc += jumpDelta;
-	}
-}
+

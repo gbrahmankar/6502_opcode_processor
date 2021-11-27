@@ -1,6 +1,5 @@
 *.o
-*.swp
-*.swo
+*.sw*
 
 # executable
 opcode_processor 

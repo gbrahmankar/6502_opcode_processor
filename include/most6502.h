@@ -54,12 +54,22 @@ public :
 		BCC,
 		BCS,
 		BEQ,
+		BIT,
 		BMI,
 		BNE,
 		BPL,
 		BVC,
 		BVS,
-		BIT
+		CLC,
+		CLD,
+		CLI,
+		CLV,
+		CMP,
+		CPX,
+		CPY,
+		DEC,
+		DEX,
+		DEY
   };
 
   struct Instruction {
@@ -74,7 +84,56 @@ public :
 		uint16_t addr; 	
 	};
   
-  MosT6502();
+  MosT6502() {
+		m_instrSet = {
+
+			{ 0x00, { "break", AddrMode::IMMEDIATE, InstrName::BRK, 7 } },
+			
+			// load-store
+			{ 0xa9, { "load_a_imm", AddrMode::IMMEDIATE, InstrName::LDA, 2} },
+			
+			// add-sub
+			{ 0x69, { "add_with_carry_imm", AddrMode::IMMEDIATE, InstrName::ADC, 2} },
+			{ 0xe9, { "sub_with_burrow_in_imm", AddrMode::IMMEDIATE, InstrName::SBC, 2} },
+
+			// logical
+			{ 0x29, { "bitwise_and", AddrMode::IMMEDIATE, InstrName::AND, 2} },
+
+			// shifts
+			{ 0x0a, { "arithmetic_shift_left_1_bit", AddrMode::IMPLIED, InstrName::ASL, 2} },
+			
+			// branch relative
+			{ 0x90, { "branch_on_carry_clear", AddrMode::RELATIVE, InstrName::BCC, 2} },
+			{ 0xb0, { "branch_on_carry_set", AddrMode::RELATIVE, InstrName::BCS, 2} },
+			{ 0xf0, { "branch_on_result_zero", AddrMode::RELATIVE, InstrName::BEQ, 2} },
+			{ 0x30, { "branch_on_result_minus", AddrMode::RELATIVE, InstrName::BMI, 2} },
+			{ 0xd0, { "branch_on_result_not_zero", AddrMode::RELATIVE, InstrName::BNE, 2} },
+			{ 0x10, { "branch_on_result_plus", AddrMode::RELATIVE, InstrName::BPL, 2} },
+			{ 0x50, { "branch_on_overflow_clear", AddrMode::RELATIVE, InstrName::BVC, 2} },
+			{ 0x70, { "branch_on_overflow_set", AddrMode::RELATIVE, InstrName::BVS, 2} },
+
+			// clearing flags
+			{ 0x18, { "clear_carry_flag", AddrMode::IMPLIED, InstrName::CLC, 2} },
+			{ 0xD8, { "clear_decimal_flag", AddrMode::IMPLIED, InstrName::CLD, 2} },
+			{ 0x58, { "disable_interrupts", AddrMode::IMPLIED, InstrName::CLI, 2} },
+			{ 0xB8, { "clear_overflow_flag", AddrMode::IMPLIED, InstrName::CLV, 2} },
+			
+			// comparison 
+			{ 0xc9, { "cmp_immediate", AddrMode::IMMEDIATE, InstrName::CMP, 2} },
+			{ 0xe0, { "cmp_x_immediate", AddrMode::IMMEDIATE, InstrName::CPX, 2} },
+			{ 0xc0, { "cmp_y_immediate", AddrMode::IMMEDIATE, InstrName::CPY, 2} },
+
+			// decrement 
+			{ 0xc6, { "dec_mem_1", AddrMode::ZERO_PAGE, InstrName::DEC, 5} },
+			{ 0xca, { "dec_x_1", AddrMode::IMMEDIATE, InstrName::DEX, 2} },
+			{ 0x88, { "dec_y_1", AddrMode::IMMEDIATE, InstrName::DEY, 2} },
+			
+			// lesser used 
+			{ 0x24, { "test_bit_in_mem_with_acc_zp",  AddrMode::ZERO_PAGE, InstrName::BIT, 3} },
+			{ 0x2c, { "test_bit_in_mem_with_acc_abs", AddrMode::ABSOLUTE,  InstrName::BIT, 4} }
+
+		};
+	}
 
   void ConnectBus(Bus* bp) { bus = bp; std::cout << "MosTech6502 connected to the bus !\n"; }
 
@@ -84,7 +143,8 @@ public :
   void ExecuteInstruction();    
 
 	// helpers
-	void ExecBranchInstr(Instruction instr, FLAGS6502 f, uint8_t expectedValue);
+	void ExecBranchInstr(const Instruction& instr, FLAGS6502 f, uint8_t expectedValue);
+	void CompareRegister(const Instruction& instr, uint8_t targetReg); 
 
 public : // private:
   
