@@ -45,7 +45,6 @@ public :
 
   // instruction exec
   enum InstrName {
-		LDA,
     BRK,
 		ADC,
 		SBC, 
@@ -69,7 +68,39 @@ public :
 		CPY,
 		DEC,
 		DEX,
-		DEY
+		DEY, 
+		EOR,
+		INC,
+		INX,
+		INY,
+		JMP,
+		JSR,
+		LDA,
+		LDX,
+		LDY,
+		LSR,
+		NOP,
+		ORA,
+		PHA,
+		PHP,
+		PLA,
+		PLP,
+		ROL,
+		ROR,
+		RTI,
+		RTS,
+		SEC,
+		SED,
+		SEI,
+		STA,
+		STX,
+		STY,
+		TAX,
+		TAY,
+		TSX,
+		TXA,
+		TXS,
+		TYA
   };
 
   struct Instruction {
@@ -91,6 +122,19 @@ public :
 			
 			// load-store
 			{ 0xa9, { "load_a_imm", AddrMode::IMMEDIATE, InstrName::LDA, 2} },
+			{ 0xa2, { "load_x_imm", AddrMode::IMMEDIATE, InstrName::LDX, 2} },
+			{ 0xa0, { "load_y_imm", AddrMode::IMMEDIATE, InstrName::LDY, 2} },
+
+			{ 0x85, { "store_acc_in_memory", AddrMode::ZERO_PAGE, InstrName::STA, 3} },
+			{ 0x86, { "store_index_x_in_memory", AddrMode::ZERO_PAGE, InstrName::STX, 3} },
+			{ 0x84, { "store_index_y_in_memory", AddrMode::ZERO_PAGE, InstrName::STY, 3} },
+
+			{ 0xaa, { "transfer_a_to_x", AddrMode::IMPLIED, InstrName::TAX, 2} },
+			{ 0xa8, { "transfer_a_to_y", AddrMode::IMPLIED, InstrName::TAY, 2} },
+			{ 0xba, { "transfer_sp_to_x", AddrMode::IMPLIED, InstrName::TSX, 2} },
+			{ 0x8a, { "transfer_x_to_a", AddrMode::IMPLIED, InstrName::TXA, 2} },
+			{ 0x9a, { "transfer_x_to_sp", AddrMode::IMPLIED, InstrName::TXS, 2} },
+			{ 0x98, { "transfer_y_to_a", AddrMode::IMPLIED, InstrName::TYA, 2} },
 			
 			// add-sub
 			{ 0x69, { "add_with_carry_imm", AddrMode::IMMEDIATE, InstrName::ADC, 2} },
@@ -98,9 +142,17 @@ public :
 
 			// logical
 			{ 0x29, { "bitwise_and", AddrMode::IMMEDIATE, InstrName::AND, 2} },
+			{ 0x49, { "exclusive_or", AddrMode::IMMEDIATE, InstrName::EOR, 2} },
+
+			{ 0x09, { "or_mem_with_acc", AddrMode::IMMEDIATE, InstrName::ORA, 2} },
 
 			// shifts
 			{ 0x0a, { "arithmetic_shift_left_1_bit", AddrMode::IMPLIED, InstrName::ASL, 2} },
+
+			{ 0x4a, { "shift_one_bit_right", AddrMode::IMPLIED, InstrName::LSR, 2} },
+
+			{ 0x2a, { "rotate_one_bit_left_impkied", AddrMode::IMPLIED, InstrName::ROL, 2} },
+			{ 0x6a, { "rotate_one_bit_right_impkied", AddrMode::IMPLIED, InstrName::ROR, 2} },
 			
 			// branch relative
 			{ 0x90, { "branch_on_carry_clear", AddrMode::RELATIVE, InstrName::BCC, 2} },
@@ -112,25 +164,45 @@ public :
 			{ 0x50, { "branch_on_overflow_clear", AddrMode::RELATIVE, InstrName::BVC, 2} },
 			{ 0x70, { "branch_on_overflow_set", AddrMode::RELATIVE, InstrName::BVS, 2} },
 
-			// clearing flags
+			{ 0x4c, { "jump_to_new_loc", AddrMode::ABSOLUTE, InstrName::JMP, 3} },
+			{ 0x20, { "jump_to_subroutine", AddrMode::ABSOLUTE, InstrName::JSR, 6} },
+
+			{ 0x40, { "return_from_interrupt", AddrMode::IMPLIED, InstrName::RTI, 6} },
+			{ 0x60, { "return_from_subroutine", AddrMode::IMPLIED, InstrName::RTS, 6} },
+
+			// set/clear flags
 			{ 0x18, { "clear_carry_flag", AddrMode::IMPLIED, InstrName::CLC, 2} },
 			{ 0xD8, { "clear_decimal_flag", AddrMode::IMPLIED, InstrName::CLD, 2} },
 			{ 0x58, { "disable_interrupts", AddrMode::IMPLIED, InstrName::CLI, 2} },
 			{ 0xB8, { "clear_overflow_flag", AddrMode::IMPLIED, InstrName::CLV, 2} },
+		
+			{ 0x38, { "set_carry_flag", AddrMode::IMPLIED, InstrName::SEC, 2} },
+			{ 0xf8, { "set_decimal_flag", AddrMode::IMPLIED, InstrName::SED, 2} },
+			{ 0x78, { "set_interrupt_disable_status_flag", AddrMode::IMPLIED, InstrName::SEI, 2} },
 			
 			// comparison 
 			{ 0xc9, { "cmp_immediate", AddrMode::IMMEDIATE, InstrName::CMP, 2} },
 			{ 0xe0, { "cmp_x_immediate", AddrMode::IMMEDIATE, InstrName::CPX, 2} },
 			{ 0xc0, { "cmp_y_immediate", AddrMode::IMMEDIATE, InstrName::CPY, 2} },
 
-			// decrement 
+			// decrement/increment
 			{ 0xc6, { "dec_mem_1", AddrMode::ZERO_PAGE, InstrName::DEC, 5} },
-			{ 0xca, { "dec_x_1", AddrMode::IMMEDIATE, InstrName::DEX, 2} },
-			{ 0x88, { "dec_y_1", AddrMode::IMMEDIATE, InstrName::DEY, 2} },
+			{ 0xca, { "dec_x_1", AddrMode::IMPLIED, InstrName::DEX, 2} },
+			{ 0x88, { "dec_y_1", AddrMode::IMPLIED, InstrName::DEY, 2} },
+			{ 0xe6, { "inc_mem_1", AddrMode::ZERO_PAGE, InstrName::INC, 5} },
+			{ 0xe8, { "inc_x_1", AddrMode::IMPLIED, InstrName::INX, 2} },
+			{ 0xc8, { "inc_y_1", AddrMode::IMPLIED, InstrName::INY, 2} },
+
+			// stack ops
+			{ 0x48, { "push_acc_on_stack", AddrMode::IMPLIED,  InstrName::PHA, 3} },
+			{ 0x08, { "push_proc_status_on_stack", AddrMode::IMPLIED,  InstrName::PHP, 3} },
+			{ 0x68, { "pull_acc_from_stack", AddrMode::IMPLIED,  InstrName::PLA, 4} },
+			{ 0x28, { "pull_proc_status_from_stack", AddrMode::IMPLIED,  InstrName::PLP, 4} },
 			
 			// lesser used 
 			{ 0x24, { "test_bit_in_mem_with_acc_zp",  AddrMode::ZERO_PAGE, InstrName::BIT, 3} },
 			{ 0x2c, { "test_bit_in_mem_with_acc_abs", AddrMode::ABSOLUTE,  InstrName::BIT, 4} }
+		
 
 		};
 	}

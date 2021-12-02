@@ -153,13 +153,7 @@ void MosT6502::ExecuteInstruction() {
 
   switch(instr.instrName) {
     case InstrName::BRK : {
-    }
-    case InstrName::LDA : {
-			a = FetchData(instr).data;			
-			SetFlag(FLAGS6502::Z, a == 0x00);
-			SetFlag(FLAGS6502::N, a &  0x80);
-			break;
-		}
+    } 
 		case InstrName::ADC : {
 			uint16_t byteData = (uint16_t)FetchData(instr).data;
 			uint16_t result = (uint16_t)a + byteData + (uint16_t)GetFlag(FLAGS6502::C);	
@@ -289,7 +283,234 @@ void MosT6502::ExecuteInstruction() {
 			SetFlag(FLAGS6502::N, temp & 0x0080);
 			break;
 		}
+		case InstrName::EOR : {
+			auto dd = FetchData(instr);
+			
+			a = a ^ dd.data;
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a & 0x80);
+			break;
+		}
+		case InstrName::INC : {
+			auto dd = FetchData(instr);
 
+			uint16_t temp = (uint16_t)dd.data + 1;
+			bus->Write(dd.addr, temp & 0x00ff);
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+		case InstrName::INX : {
+			uint16_t temp = (uint16_t)x + 1;
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+		case InstrName::INY : {
+			uint16_t temp = (uint16_t)y + 1;
+			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, temp & 0x0080);
+			break;
+		}
+		case InstrName::JMP : {
+			pc = FetchData(instr).addr;
+			break;
+		}
+		case InstrName::JSR : {
+			uint16_t jumpAddr = FetchData(instr).addr; 
+
+			pc -= 1;
+
+			bus->Write(0x0100 + sp, (pc >> 8) & 0x00ff);
+			sp -= 1;
+			bus->Write(0x0100 + sp, pc & 0x00ff);
+			sp -= 1;
+		
+			pc = jumpAddr;			 
+			break;
+		}
+		case InstrName::LDA : {
+			a = FetchData(instr).data;			
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a &  0x80);
+			break;
+		}
+		case InstrName::LDX : {
+			x = FetchData(instr).data;			
+			SetFlag(FLAGS6502::Z, x == 0x00);
+			SetFlag(FLAGS6502::N, x &  0x80);
+			break;
+		}
+		case InstrName::LDY : {
+			y = FetchData(instr).data;			
+			SetFlag(FLAGS6502::Z, y == 0x00);
+			SetFlag(FLAGS6502::N, y &  0x80);
+			break;
+		}
+		case InstrName::LSR : {
+			auto dd = FetchData(instr);			
+			SetFlag(FLAGS6502::C, dd.data & 0x01);
+			uint8_t fData = dd.data >> 1;
+			SetFlag(FLAGS6502::Z, (fData & 0xff) == 0x00);
+			SetFlag(FLAGS6502::N, fData & 0x80);
+			if (instr.addrMode == AddrMode::IMPLIED) {
+				a = fData;
+			}
+			else {
+				bus->Write(dd.addr, fData);
+			}
+			break;
+		}
+		case InstrName::NOP : {
+			break;
+		}
+		case InstrName::ORA : {
+			auto dd = FetchData(instr);			
+
+			a = a | dd.data;
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a &  0x80);	
+			break;
+		}
+		case InstrName::PHA : {
+			bus->Write(0x0100 + sp, a);
+			sp -= 1;
+			break;
+		}
+		case InstrName::PHP : {
+			bus->Write(0x0100 + sp, sr | FLAGS6502::B | FLAGS6502::U);
+			SetFlag(FLAGS6502::B, false);
+			SetFlag(FLAGS6502::U, false);
+			sp -= 1;
+			break;
+		}
+		case InstrName::PLA : {
+			sp += 1;
+			a = bus->Read(0x0100 + sp);
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a &  0x80);
+			break;
+		}
+		case InstrName::PLP : {
+			sp += 1;
+			sr = bus->Read(0x0100 + sp);
+			SetFlag(FLAGS6502::U, 1);	
+			break;
+		}
+		case InstrName::ROL : {
+			auto dd = FetchData(instr);			
+
+			uint16_t rolData = (uint16_t)(dd.data << 1) | GetFlag(FLAGS6502::C);
+			SetFlag(FLAGS6502::C, rolData & 0xff00);
+			SetFlag(FLAGS6502::Z, (rolData & 0x00ff) == 0x0000);
+			SetFlag(FLAGS6502::N, rolData & 0x0080);
+			if (instr.addrMode == AddrMode::IMPLIED) { 
+				a = rolData & 0x00ff;
+			}
+			else {
+				bus->Write(dd.addr, rolData & 0x00ff);
+			}
+			break;
+		}
+		case InstrName::ROR : {
+			auto dd = FetchData(instr);			
+			
+			uint16_t rorData = (uint16_t)(GetFlag(FLAGS6502::C) << 7) | (dd.data >> 1);
+			SetFlag(FLAGS6502::C, rorData & 0x01);
+			SetFlag(FLAGS6502::Z, (rorData & 0x00ff) == 0x00);
+			SetFlag(FLAGS6502::N, rorData & 0x0080);
+			if (instr.addrMode == AddrMode::IMPLIED) {
+				a = rorData & 0x00ff;
+			}
+			else {
+				bus->Write(dd.addr, rorData & 0x00ff);
+			}
+			break;
+		}
+		case InstrName::RTI : {
+			sp += 1;
+			sr = bus->Read(0x0100 + sp);
+			sr &= ~FLAGS6502::B;
+			sr &= ~FLAGS6502::U;
+
+			sp += 1;
+			pc = (uint16_t)bus->Read(0x0100 + sp);
+			sp += 1;
+			pc |= (uint16_t)bus->Read(0x0100 + sp) << 8;		
+			break;
+		}
+		case InstrName::RTS : {
+			sp += 1;
+			pc = (uint16_t)bus->Read(0x0100 + sp);
+			sp += 1;
+			pc |= (uint16_t)bus->Read(0x0100 + sp) << 8;
+	
+			pc += 1; // Important : pc is inc here as we stacked the 2nd arg byte addr when we execd JSR
+			// JSR aa bb : in this eg, pc was pointing to bb when we stacked the return addr 
+			// incrementing pc will point us to the next instr when we return ...   
+			break;
+		} 
+		case InstrName::SEC : {
+			SetFlag(FLAGS6502::C, true);
+			break;
+		}
+		case InstrName::SED : {
+			SetFlag(FLAGS6502::D, true);
+			break;
+		}
+		case InstrName::SEI : {
+			SetFlag(FLAGS6502::I, true);
+			break;
+		}
+		case InstrName::STA : {
+			auto dd = FetchData(instr);	
+			bus->Write(dd.addr, a);
+			break;
+		}
+		case InstrName::STX : {
+			auto dd = FetchData(instr);	
+			bus->Write(dd.addr, x);
+			break;
+		}
+		case InstrName::STY : {
+			auto dd = FetchData(instr);	
+			bus->Write(dd.addr, y);
+			break;
+		}
+		case InstrName::TAX : {
+			x = a;
+			SetFlag(FLAGS6502::Z, x == 0x00);
+			SetFlag(FLAGS6502::N, x &  0x80);
+			break;
+		}
+		case InstrName::TAY : {
+			y = a;
+			SetFlag(FLAGS6502::Z, y == 0x00);
+			SetFlag(FLAGS6502::N, y &  0x80);
+			break;
+		}
+		case InstrName::TSX : {
+			x = sp;
+			SetFlag(FLAGS6502::Z, x == 0x00);
+			SetFlag(FLAGS6502::N, x & 0x80);
+			break;
+		}
+		case InstrName::TXA : {
+			a = x;
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a & 0x80);
+			break;
+		}
+		case InstrName::TXS : {
+			sp = x;
+			break;
+		}
+		case InstrName::TYA : {
+			a = y;
+			SetFlag(FLAGS6502::Z, a == 0x00);
+			SetFlag(FLAGS6502::N, a & 0x80);	
+			break;
+		}
     default : {
       std::cout << "Instruction opcode=" << opcode << " not implemented yet";
       abort();
