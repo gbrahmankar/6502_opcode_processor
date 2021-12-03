@@ -47,6 +47,44 @@ void MosT6502::CompareRegister(const MosT6502::Instruction& instr, uint8_t targe
 		SetFlag(FLAGS6502::N, temp & 0x0080);	
 }
 
+void MosT6502::ExecIRQ() {
+	if (GetFlag(FLAGS6502::I) == 0) {
+		bus->Write(0x0100 + sp, (pc >> 8) & 0x00ff);
+		sp -= 1;
+		bus->Write(0x0100 + sp, pc & 0x00ff);
+		sp -= 1;
+
+		SetFlag(FLAGS6502::B, false);
+		SetFlag(FLAGS6502::U, true);
+		SetFlag(FLAGS6502::I, true);
+		bus->Write(0x0100 + sp, sr);
+		sp -= 1;
+
+		uint16_t pc_read_addr = 0xfffe;
+		uint16_t lo = bus->Read(pc_read_addr + 0);
+		uint16_t hi = bus->Read(pc_read_addr + 1);
+		pc = (hi << 8) | lo;
+	}
+}
+
+void MosT6502::NmExecIRQ() {
+	bus->Write(0x0100 + sp, (pc >> 8) & 0x00ff);
+	sp -= 1;
+	bus->Write(0x0100 + sp, pc & 0x00ff);
+	sp -= 1;
+
+	SetFlag(FLAGS6502::B, false);
+	SetFlag(FLAGS6502::U, true);
+	SetFlag(FLAGS6502::I, true);
+	bus->Write(0x0100 + sp, sr);
+	sp -= 1;
+
+	uint16_t pc_read_addr = 0xfffa;
+	uint16_t lo = bus->Read(pc_read_addr + 0);
+	uint16_t hi = bus->Read(pc_read_addr + 1);
+	pc = (hi << 8) | lo;
+}
+
 MosT6502::DataDetails MosT6502::FetchData(Instruction instr) {
   DataDetails dd; 
 

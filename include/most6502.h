@@ -217,6 +217,8 @@ public :
 	// helpers
 	void ExecBranchInstr(const Instruction& instr, FLAGS6502 f, uint8_t expectedValue);
 	void CompareRegister(const Instruction& instr, uint8_t targetReg); 
+	void ExecIRQ();
+	void NmExecIRQ();
 
 public : // private:
   
