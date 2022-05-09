@@ -10,7 +10,8 @@ int main(int argc, char *argv[]) {
   Bus bus;
   bus.Initialize();
 
-  if(argc < 2) {
+  if(argc < 3) {
+    std::cout << "usage : ./opcode_processor <start_addr_in_hex> 6502_hex_mc\n";
     return 1;
   }
 

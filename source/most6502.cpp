@@ -332,12 +332,14 @@ void MosT6502::ExecuteInstruction() {
 			uint16_t temp = (uint16_t)x - 1;
 			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
 			SetFlag(FLAGS6502::N, temp & 0x0080);
+            x = temp;
 			break;
 		}
 		case InstrName::DEY : {
 			uint16_t temp = (uint16_t)y - 1;
 			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
 			SetFlag(FLAGS6502::N, temp & 0x0080);
+            y = temp;
 			break;
 		}
 		case InstrName::EOR : {
