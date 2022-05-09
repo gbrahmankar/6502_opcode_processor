@@ -354,7 +354,7 @@ public : // private:
   
   // status register member + utils  
 	uint8_t  sr     = 0x00;		
-  bool     GetFlag(FLAGS6502 f)         { return ((sr & f > 0) ? 1 : 0); } 
+  bool     GetFlag(FLAGS6502 f)         { return (((sr & f) > 0) ? 1 : 0); } 
   void     SetFlag(FLAGS6502 f, bool v) { ((v) ? sr|=f : sr&=~f);        }
   void     PrintStatus() {
     std::cout << "carry   =" << ((sr & FLAGS6502::C) ? "1" : "0") << '\n';

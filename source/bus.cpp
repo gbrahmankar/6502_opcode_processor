@@ -22,6 +22,7 @@ uint8_t Bus::Read(uint16_t addr) {
 }	
 	
 void Bus::PrintRamState() {
+  std::cout << "\nRam state starts :\n";
   uint16_t lineNumber = 0x0000;
   std::cout << STREAM_WORD(lineNumber) << " : ";
   for(int i=0; i<ram.size(); i++) {
@@ -32,6 +33,6 @@ void Bus::PrintRamState() {
     } 
     std::cout << STREAM_BYTE(ram[i]) << " ";
   }  
-  std::cout << '\n';
+  std::cout << "\nRam state ends !\n";
 }
 

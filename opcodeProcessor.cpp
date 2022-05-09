@@ -1,5 +1,6 @@
 #include<iostream>
 #include<fstream>
+#include <sstream>
 #include<string>
 
 #include"include/bus.h"
@@ -14,11 +15,14 @@ int main(int argc, char *argv[]) {
   }
 
   std::ifstream sourceFile;
-  sourceFile.open(std::string(argv[1]));
+  sourceFile.open(std::string(argv[2]));
   
-  uint16_t startAddr = 0x8000;
-  bus.Write(0xFFFC, 0x00);
-  bus.Write(0xFFFD, 0x80);
+  std::string startAddrString(argv[1]);
+  std::stringstream startAddrStream(startAddrString);     
+  uint16_t startAddr;
+  startAddrStream >> std::hex >> startAddr;
+  bus.Write(0xfffc, startAddr & 0xff);
+  bus.Write(0xfffd, (startAddr >> 8) & 0xff);
 
   unsigned int sourceByte; 
   uint16_t byteCnt = 0; 
@@ -28,13 +32,14 @@ int main(int argc, char *argv[]) {
     byteCnt += 1;
   }
 
-  bus.PrintRamState();
+  std::cout << "Program start_addr=" << STREAM_BYTE(startAddr) << " end_addr=" << STREAM_BYTE(startAddr + byteCnt - 1 - 1) <<
+  '\n';
+
   sourceFile.close();
 
   bus.StartCpu();
-  bus.PrintCpuState();
 	
-	bus.StartOpcodeProcessing();
+  bus.StartOpcodeProcessing();
 
   return 0;
 }

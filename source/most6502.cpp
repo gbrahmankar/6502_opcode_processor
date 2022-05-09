@@ -152,17 +152,34 @@ MosT6502::DataDetails MosT6502::FetchData(Instruction instr) {
 			dd = {bus->Read((bus->Read(ptr + 1) << 8) | bus->Read(ptr + 0)), (uint16_t)((bus->Read(ptr + 1) << 8) | bus->Read(ptr + 0))};
       break; 
     }
-    /*case AddrMode::INDIRECT_X : {
-      return 0;  
+    case AddrMode::INDIRECT_X : {
+        uint16_t list_base_addr = bus->Read(pc);
+        pc += 1;
+        uint16_t list_addr = list_base_addr + x;
+        
+        uint16_t lo = bus->Read(list_addr);
+        uint16_t hi = bus->Read(list_addr + 1);
+
+        dd = {bus->Read((hi<<8) | lo), (uint16_t)((hi<<8) | lo)};
+        break;
     }
     case AddrMode::INDIRECT_Y : {
-      return 0; 
-    }*/
+        uint16_t list_base_addr = bus->Read(pc);
+        pc += 1;
+        uint16_t list_addr = list_base_addr + y;
+        
+        uint16_t lo = bus->Read(list_addr);
+        uint16_t hi = bus->Read(list_addr + 1);
+
+        dd = {bus->Read((hi<<8) | lo), (uint16_t)((hi<<8) | lo)};
+        break;
+    }
     case AddrMode::RELATIVE : {
 			uint8_t jumpDelta = bus->Read(pc);
 			pc += 1;
 	
 			dd = {jumpDelta, pc};			
+            break;
     }
     default : {
       std::cout << "Addr_mode=" << GetAddrModeName(instr.addrMode) 
@@ -178,7 +195,8 @@ void MosT6502::ExecuteInstruction() {
   pc += 1; // as soon as a read from pc happens; pc++; from WD spec;
 
 	if(opcode == TERMINATE_OPCODE) {
-    std::cout << "\nProgram completed !\n";
+        std::cout << "\nProgram completed !\n";
+        bus->PrintRamState(); 
 		exit(0);				
 	}
   
@@ -191,6 +209,7 @@ void MosT6502::ExecuteInstruction() {
 
   switch(instr.instrName) {
     case InstrName::BRK : {
+        break;
     } 
 		case InstrName::ADC : {
 			uint16_t byteData = (uint16_t)FetchData(instr).data;
@@ -342,12 +361,14 @@ void MosT6502::ExecuteInstruction() {
 			uint16_t temp = (uint16_t)x + 1;
 			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
 			SetFlag(FLAGS6502::N, temp & 0x0080);
+            x = temp;
 			break;
 		}
 		case InstrName::INY : {
 			uint16_t temp = (uint16_t)y + 1;
 			SetFlag(FLAGS6502::Z, (temp & 0x00ff) == 0x0000);
 			SetFlag(FLAGS6502::N, temp & 0x0080);
+            y = temp;
 			break;
 		}
 		case InstrName::JMP : {
