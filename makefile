@@ -17,3 +17,6 @@ opcodeProcessor.o : opcodeProcessor.cpp
 
 clean : 
 	sudo rm -f opcode_processor *o
+
+cstyle :
+	find -f . | awk -f .filter_hpp | xargs clang-format -i -style=file
