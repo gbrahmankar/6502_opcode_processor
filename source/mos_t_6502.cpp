@@ -1,4 +1,4 @@
-#include "../include/most6502.h"
+#include "../include/mos_t_6502.h"
 // concept : we need full obj declaration during usage eg : bus->Read(...)
 #include "../include/bus.h"  // to prevent circular includes
 
